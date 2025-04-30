@@ -1,7 +1,7 @@
 # already installed in docker
 torch==2.7.0 --extra-index-url https://download.pytorch.org/whl/cu126
 
-# @TG: transformer versions are trickly. You need to get the right version of you waste hours, or even days
+# @TG: transformer versions are trickly. You have to get the right version
 transformers==4.46.3
 accelerate==1.6.0
 tokenizers==0.20.3

@@ -229,11 +229,11 @@ class LLMWrapper:
             for i in range(0, len(lines), batch_size):
                 yield lines[i : i + batch_size]
 
-        # add line numbers to src_lines
+        # add line numbers to src_lines for sorting and restoring order
         src_lines = list(enumerate(src_lines, start=0))
         # sort by length; we tokenize the text to get the length
         def find_length(x):
-            return len(self.tokenizer(x[1], add_special_tokens=False))
+            return len(self.tokenizer(x, add_special_tokens=False))
         src_lines = list(sorted(src_lines, key=lambda x: find_length(x[1]), reverse=True))
 
         batches = list(make_batches(src_lines, batch_size))
