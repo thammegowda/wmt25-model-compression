@@ -1,158 +1,112 @@
-# wmt25-model-compression
-This repo contains setup and baselines for WMT25 Model Compression task.
-For more details about the shared task, visit https://www2.statmt.org/wmt25/model-compression.html 
+# WMT25 Model Compression
 
+This repository provides setup scripts and baseline tools for the WMT25 Model Compression shared task.  
+For task details, visit the [official page](https://www2.statmt.org/wmt25/model-compression.html).
 
+---
 
-## Changelog / Announcements
-* 2025-04-30: setup and baseline tools
+## Announcements
 
+- **2025-04-30:** Initial release with setup and baseline tools.
 
-TODOS:
-1. support newer metric like comet (Currently chrf is used for demo)
-1. eng-ara dataset
+**Planned:**
+- Add support for newer metrics (e.g., COMET; currently using chrF for demo)
+- Add English-Arabic dataset
 
-> NOTE: watch this repository for updates on the above TODOs
+> **Tip:** Watch this repository for updates.
 
+---
 
-## Setup
+## Quick Start
+
+### 1. Installation
 
 ```bash
 pip install -r requirements.txt
+```
 
-# optional: login to huggingface hub to access gated models
-# https://huggingface.co/CohereLabs/aya-expanse-8b
+### 2. (Optional) Hugging Face Login
+
+```bash
 huggingface-cli login
+```
+*Required for gated models (e.g., [aya-expanse-8b](https://huggingface.co/CohereLabs/aya-expanse-8b)).*
 
-# download models and test sets
+### 3. Download Models & Test Sets
+
+```bash
 python run.py setup
 ```
+- Default work directory: `./wmt25-compression`
+- Change with `-w` or `--work` argument
 
-The script assumes `./wmt25-compression` as the default work directory. The work directory can be changed with `-w|--work` CLI argument
-
-
-The above step downloads models and tests under $WORK_DIR
+**Directory Structure:**
 ```
-tree -h $WORK_DIR
-[4.0K]  wmt25-compression/
-├── [4.0K]  models
-│   └── [4.0K]  aya-expanse-8b
-│       ├── [4.0K]  base
-│       │   ├── [ 707]  config.json
-│       │   ├── [ 137]  generation_config.json
-│       │   ├── [4.6G]  model-00001-of-00004.safetensors
-│       │   ├── [4.6G]  model-00002-of-00004.safetensors
-│       │   ├── [4.7G]  model-00003-of-00004.safetensors
-│       │   ├── [1.1G]  model-00004-of-00004.safetensors
-│       │   ├── [ 20K]  model.safetensors.index.json
-│       │   ├── [ 439]  special_tokens_map.json
-│       │   ├── [ 19M]  tokenizer.json
-│       │   └── [8.4K]  tokenizer_config.json
-│       ├── [4.0K]  bnb-4bit
-│       │   ├── [1.2K]  config.json
-│       │   ├── [ 137]  generation_config.json
-│       │   ├── [4.6G]  model-00001-of-00002.safetensors
-│       │   ├── [999M]  model-00002-of-00002.safetensors
-│       │   ├── [ 84K]  model.safetensors.index.json
-│       │   ├── [ 439]  special_tokens_map.json
-│       │   ├── [ 19M]  tokenizer.json
-│       │   └── [8.4K]  tokenizer_config.json
-│       └── [4.0K]  bnb-8bit
-│           ├── [1.2K]  config.json
-│           ├── [ 137]  generation_config.json
-│           ├── [4.6G]  model-00001-of-00002.safetensors
-│           ├── [3.8G]  model-00002-of-00002.safetensors
-│           ├── [ 57K]  model.safetensors.index.json
-│           ├── [ 439]  special_tokens_map.json
-│           ├── [ 19M]  tokenizer.json
-│           └── [8.4K]  tokenizer_config.json
-└── [4.0K]  tests
-    ├── [4.0K]  ces-deu
-    │   ├── [267K]  wmt19.ces-deu.ces
-    │   └── [289K]  wmt19.ces-deu.deu
-    └── [4.0K]  jpn-zho
-        ├── [190K]  wmt24.jpn-zho.jpn
-        └── [145K]  wmt24.jpn-zho.zho
+$WORK_DIR/
+├── models/
+│   └── aya-expanse-8b/
+│       ├── base/
+│       ├── bnb-4bit/
+│       └── bnb-8bit/
+└── tests/
+  ├── ces-deu/
+  └── jpn-zho/
 ```
+*Note: Test sets here are for development only. Official evaluation uses different data.*
 
-Note: the `tests/` downloaded here are for development purpose. The actual testsets used for shared task evaluation will be different. See shared task webpage for details.
+---
 
-
-## Run Baselines
+## Running Baselines
 
 ```bash
-for m in $WORK_DIR/models/aya-expanse-8b/*; do
-    python run.py eval -m $m -pb;
+for m in wmt25-compression/models/aya-expanse-8b/*; do
+  python run.py eval -m $m -pb
 done
 
-# report
-$ python run.py report
-wmt19.ces-deu.deu.aya-expanse-8b.base.out.chrf  54.5
-wmt19.ces-deu.deu.aya-expanse-8b.bnb-4bit.out.chrf      54.2
-wmt19.ces-deu.deu.aya-expanse-8b.bnb-8bit.out.chrf      54.5
-wmt24.jpn-zho.zho.aya-expanse-8b.base.out.chrf  24.4
-wmt24.jpn-zho.zho.aya-expanse-8b.bnb-4bit.out.chrf      23.4
-wmt24.jpn-zho.zho.aya-expanse-8b.bnb-8bit.out.chrf      24.8
+python run.py report
 ```
 
-## CLI Options
+**Sample Output:**
+```
+wmt19.ces-deu.deu.aya-expanse-8b.base.out.chrf      54.5
+wmt19.ces-deu.deu.aya-expanse-8b.bnb-4bit.out.chrf  54.2
+wmt19.ces-deu.deu.aya-expanse-8b.bnb-8bit.out.chrf  54.5
+wmt24.jpn-zho.zho.aya-expanse-8b.base.out.chrf      24.4
+...
+```
 
-### subcommands
+---
+
+## Command-Line Interface
+
+### Subcommands
+
+- `setup`   — Download models and prepare baselines
+- `eval`    — Evaluate models
+- `report`  — Summarize results
+
+### Common Options
+
+- `-w, --work`   Working directory (default: `wmt25-compression`)
+- `-h, --help`   Show help
+
+### Examples
+
+**Setup:**
 ```bash
-python run.py -h
-usage: run.py [-h] {setup,eval,report} ...
-
-wmt25 model compression
-
-positional arguments:
-  {setup,eval,report}  Sub-commands
-    setup              Download model and make 8bit and 4bit baselines
-    eval               Evaluate models
-    report             Report scores
-
-options:
-  -h, --help           show this help message and exit
+python run.py setup -w mydir
 ```
 
-### setup
+**Evaluate:**
 ```bash
-python run.py setup -h
-usage: run.py setup [-h] [-w WORK] [-c CACHE]
-
-options:
-  -h, --help            show this help message and exit
-  -w WORK, --work WORK  Working directory to store models, test sets and results (default: wmt25-compression)
-  -c CACHE, --cache CACHE
-                        Hugging Face cache directory (default: /mnt/home/tg/.cache/huggingface/hub)
+python run.py eval -m <MODEL_DIR> -pb -b 64
 ```
 
-### eval
+**Report:**
 ```bash
-python run.py eval -h 
-usage: run.py eval [-h] [-w WORK] [-m MODEL] [-l LANGS [LANGS ...]] [-p PROMPT] [-b BATCH_SIZE] [-pb]
-
-options:
-  -h, --help            show this help message and exit
-  -w WORK, --work WORK  Working directory to store models, test sets and results (default: wmt25-compression)
-  -m MODEL, --model MODEL
-                        Model dir path. example wmt25-compression/models/aya-expanse-8b/base (default: None)
-  -l LANGS [LANGS ...], --langs LANGS [LANGS ...]
-                        Language pairs to evaluate. (default: ['ces-deu', 'jpn-zho'])
-  -p PROMPT, --prompt PROMPT
-                        Prompt template to use for translation (default: Translate the following text from {src} to {tgt}. {text} )
-  -b BATCH_SIZE, --batch BATCH_SIZE
-                        Batch size for translation (default: 16)
-  -pb, --progress       Show progress bar (default: False)
+python run.py report -f tsv
 ```
 
-### report
-```bash
-python run.py report -h 
-usage: run.py report [-h] [-w WORK] [-f {csv,tsv}]
+---
 
-options:
-  -h, --help            show this help message and exit
-  -w WORK, --work WORK  Working directory to store models, test sets and results (default: wmt25-compression)
-  -f {csv,tsv}, --format {csv,tsv}
-                        Output format for the report (csv or tsv) (default: tsv)
-```
+For more details, run `python run.py <subcommand> -h`.
