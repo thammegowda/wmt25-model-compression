@@ -18,9 +18,6 @@ from tqdm.auto import tqdm
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from transformers import BitsAndBytesConfig
 
-# @TG: AutoModelForCausalLM.from_pretrained() fails if model is local path
-from transformers.models.cohere import CohereTokenizerFast
-
 
 LOG.basicConfig(
     level=LOG.INFO,
@@ -187,7 +184,7 @@ class LLMWrapper:
         self.prompt_template = prompt_template
         self.progress_bar = progress_bar
         self.model_name = model_name or model_dir.parent.name
-        self.approach = approach or model_dir.name,
+        self.approach = approach or model_dir.name
         self._tokenizer = None
         self._model = None
 
@@ -196,7 +193,7 @@ class LLMWrapper:
         if self._model is None:
             self._model = AutoModelForCausalLM.from_pretrained(self.model_dir, device_map="auto")
         return self._model
-    
+
     @property
     def tokenizer(self):
         if self._tokenizer is None:
