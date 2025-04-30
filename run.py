@@ -279,7 +279,7 @@ class LLMWrapper:
         else:
             raise ValueError(f"Unsupported metric: {metric}")
         LOG.info(f"Running command: {cmd}")
-        output = sp.check_call(cmd, shell=True, text=True)
+        output = sp.check_output(cmd, shell=True, text=True)
         return output.strip()
 
     def evaluate(
@@ -307,7 +307,7 @@ class LLMWrapper:
                 else:
                     self.translate_file(pair, src_file=src_file, out_file=out_file, batch_size=batch_size)
                 for metric in metrics:
-                    score_file = ref_file.with_name(ref_file.name + f".{metric}.score")
+                    score_file = out_file.with_name(out_file.name + f".{metric}.score")
                     if score_file.exists() and score_file.stat().st_size > 0:
                         LOG.info(f"Score file {score_file} already exists; skipping")
                     else:
@@ -316,9 +316,26 @@ class LLMWrapper:
                         LOG.info(f"Score: {score_file.name} : {score}")
         LOG.info(f"Evaluation completed for {self.model_name} x {self.approach}")
 
+def report(work_dir: Path, format: str = "tsv"):
+    score_files = work_dir.glob("tests/*/*.score")
+    #[metric][lang][testset][model][approach]
+    rows = []
+    for sf in score_files:
+        if sf.stat().st_size == 0:
+            LOG.warning(f"Empty score file {sf}")
+            continue
+        tag = sf.name.replace(".score", "")
+        score = sf.read_text().strip()
+        rows.append((tag, score))
+    #TODO: break tag into parts and make a nice table
+    rows = list(sorted(rows))
+    delim = "\t" if format == "tsv" else ","
+    for row in rows:
+        print(delim.join(row))
+
 def main():
-    LOG.info(f"torch version: {torch.__version__}; transformers version: {torch.__version__}")
-    LOG.info(f"torch cuda available: {torch.cuda.is_available()}; device count: {torch.cuda.device_count()}")
+    LOG.debug(f"torch version: {torch.__version__}; transformers version: {torch.__version__}")
+    LOG.debug(f"torch cuda available: {torch.cuda.is_available()}; device count: {torch.cuda.device_count()}")
     args = parse_args()
 
     if args.command == "setup":
@@ -336,6 +353,10 @@ def main():
             metrics=TASK_CONF["metrics"],
             batch_size=args.batch_size,
         )
+    elif args.command == "report":
+        report(work_dir = args.work, format=args.format)
+    else:
+        raise ValueError(f"Unknown command: {args.command}")
 
 def parse_args():
     parser = argparse.ArgumentParser(description="wmt25 model compression")
@@ -375,6 +396,19 @@ def parse_args():
         "-b", "--batch", dest="batch_size", type=int, default=DEF_BATCH_SIZE, help="Batch size for translation"
     )
     eval_parser.add_argument("-pb", "--progress", action="store_true", help="Show progress bar")
+
+    # report
+    report_parser = subparsers.add_parser(
+        "report", help="Report scores", formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    add_common_args(report_parser)
+    report_parser.add_argument(
+        "-f", "--format",
+        choices=["csv", "tsv"],
+        default="tsv",
+        help="Output format for the report (csv or tsv)",
+    )
+
     args = parser.parse_args()
     return args
 

@@ -7,7 +7,7 @@ LABEL date="2025-04-29"
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt update
-RUN apt install -y git python3 python3-pip emacs vim wget curl ncdu tmux htop
+RUN apt install -y git python3 python3-pip emacs vim wget curl ncdu tmux htop tree
 RUN python3 -m pip install --no-cache-dir --upgrade pip
 
 RUN git clone https://github.com/huggingface/transformers && cd transformers && git checkout $REF
