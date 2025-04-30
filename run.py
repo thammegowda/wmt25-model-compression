@@ -41,12 +41,13 @@ TASK_CONF = {
     "models": ["CohereLabs/aya-expanse-8b"],
     "metrics": [
         "chrf",  # sacrebleu
-        "wmt23-cometkiwi-da-xl",  # from pymarian
+        #"wmt23-cometkiwi-da-xl",  # from pymarian
     ],
 }
 DEF_LANG_PAIRS = list(TASK_CONF["langs"].keys())
 DEF_MODEL_ID = TASK_CONF["models"][0]
 WORK_DIR = "wmt25-compression"
+DEF_BATCH_SIZE = 16
 
 LANGS_MAP = dict(
     ces="Czech",
@@ -58,7 +59,7 @@ LANGS_MAP = dict(
 )
 TRANSLATE_PROMPT = "Translate the following text from {src} to {tgt}.\n{text}\n"
 
-"""Work dir structure: 
+"""Work dir structure:
 wmt25-compression/
     | -- models /
     |    | -- model-name/
@@ -200,7 +201,8 @@ class LLMWrapper:
             self._tokenizer = AutoTokenizer.from_pretrained(self.model_dir, use_fast=True)
         return self._tokenizer
 
-    def translate_file(self, pair:str, src_file:Path, out_file:Path):
+
+    def translate_file(self, pair:str, src_file:Path, out_file:Path, batch_size:int=DEF_BATCH_SIZE):
         """
         Translate a file using the model and tokenizer
         """
@@ -221,41 +223,71 @@ class LLMWrapper:
         device = self.model.device
         self.model.eval()
         torch.set_grad_enabled(False)
-        for line in tqdm(src_lines, **pbar_args):
-            prompted_line =self.prompt_template.format(src=src, tgt=tgt, text=line)
-            if self.use_chat_template:
-                messages = [{"role": "user", "content": prompted_line}]
-                inputs = self.tokenizer.apply_chat_template(
-                    messages, tokenize=True, add_generation_prompt=True, return_tensors="pt"
-                )
-                inputs = inputs.to(device)
-                gen_tokens = self.model.generate(inputs, **gen_args)
-                # Remove input tokens from output
-               
-                # If all prompts are same length, can use inputs.shape[1]
-                prompt_len = inputs.shape[1]
-                gen_tokens = gen_tokens[:, prompt_len:]
-            else:
-                inputs = self.tokenizer(prompted_line, return_tensors="pt", padding=True)
-                inputs = {k: v.to(device) for k, v in inputs.items()}
-                gen_tokens = self.model.generate(**inputs, **gen_args)
+        LOG.info(f"Batch size {batch_size}; max_length {max_length}")
 
-            out_lines_batch = self.tokenizer.batch_decode(gen_tokens, skip_special_tokens=True)
-            out_lines_batch = [ol.replace("\n", " ").replace("\r", "") for ol in out_lines_batch]
-            out_lines.extend(out_lines_batch)
-          
+        def make_batches(lines, batch_size):
+            for i in range(0, len(lines), batch_size):
+                yield lines[i : i + batch_size]
+
+        # add line numbers to src_lines
+        src_lines = list(enumerate(src_lines, start=0))
+        # sort by length; we tokenize the text to get the length
+        def find_length(x):
+            return len(self.tokenizer(x[1], add_special_tokens=False))
+        src_lines = list(sorted(src_lines, key=lambda x: find_length(x[1]), reverse=True))
+
+        batches = list(make_batches(src_lines, batch_size))
+        pbar = tqdm(total=len(src_lines), **pbar_args)
+
+        for batch in batches:
+            line_nums = [x[0] for x in batch]
+            lines = [x[1] for x in batch]
+            lines = [self.prompt_template.format(src=src, tgt=tgt, text=line) for line in lines]
+            if self.use_chat_template:
+                chats = [[{"role": "user", "content": line}] for line in lines]
+                lines = [self.tokenizer.apply_chat_template(chat, tokenize=False, add_generation_prompt=True) for chat in chats]
+
+            inputs = self.tokenizer(lines, return_tensors="pt",  padding=True, add_special_tokens=not self.use_chat_template)
+            inputs = {k: v.to(device) for k, v in inputs.items()}
+            outputs = self.model.generate(**inputs, **gen_args)
+            input_len = inputs["input_ids"].shape[1]
+            # inputs are padded with right alignment; so we just crop entire input
+            outputs = outputs[:, input_len:]
+            hyps = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
+            hyps = [ol.replace("\n", " ").replace("\r", "") for ol in hyps]
+
+            out_lines.extend(zip(line_nums, hyps))
+            pbar.update(len(batch))
             #LOG.info(f"\n  SRC: {line}\n  OUT: {out_line}")
+
+        pbar.close()
+        # restore input order
+        out_lines = list(sorted(out_lines, key=lambda x: x[0]))
+        assert len(out_lines) == len(src_lines), f"Expected {len(src_lines)} lines but got {len(out_lines)}"
+        for i in range(len(src_lines)):
+            assert i == out_lines[i][0], f"Expected line number {i} but got {out_lines[i][0]}"
+        out_lines = [x[1] for x in out_lines]
         LOG.info(f"Writing {len(out_lines)} lines to {out_file}")
         out_file.write_text("\n".join(out_lines))
 
     def get_score(self, src_file: Path, out_file: Path, ref_file: Path, metric: str):
-        LOG.warning(f"TODO: implement get_score for {metric}")
-        
+        LOG.warning(f"Compute {metric} score for {src_file} -> {out_file} using {ref_file}")
+        if metric == "chrf":
+            cmd = f"sacrebleu {ref_file} -i {out_file} -m {metric} -b -lc"
+        elif "comet" in metric:
+            cmd = f"pymarian-eval -m {metric} -r {ref_file} -t {out_file} -s {src_file} -a only"
+        else:
+            raise ValueError(f"Unsupported metric: {metric}")
+        LOG.info(f"Running command: {cmd}")
+        output = sp.check_call(cmd, shell=True, text=True)
+        return output.strip()
+
     def evaluate(
         self,
         work_dir: Path,
         langs: List[str] = DEF_LANG_PAIRS,
         metrics: List[str] = TASK_CONF["metrics"],
+        batch_size: int = DEF_BATCH_SIZE,
     ):
         # model-name/approach-name
         LOG.info(f"Evaluating model {self.model_name} x {self.approach} from {self.model_dir}")
@@ -273,7 +305,7 @@ class LLMWrapper:
                 if out_file.exists() and out_file.stat().st_size > 0:
                     LOG.info(f"Output file {out_file} already exists; skipping")
                 else:
-                    self.translate_file(pair, src_file=src_file, out_file=out_file)
+                    self.translate_file(pair, src_file=src_file, out_file=out_file, batch_size=batch_size)
                 for metric in metrics:
                     score_file = ref_file.with_name(ref_file.name + f".{metric}.score")
                     if score_file.exists() and score_file.stat().st_size > 0:
@@ -281,7 +313,7 @@ class LLMWrapper:
                     else:
                         score = self.get_score(src_file=src_file, out_file=out_file, ref_file=ref_file, metric=metric)
                         score_file.write_text(str(score))
-                        LOG.info(f"Score file {score_file} created successfully")
+                        LOG.info(f"Score: {score_file.name} : {score}")
         LOG.info(f"Evaluation completed for {self.model_name} x {self.approach}")
 
 def main():
@@ -302,6 +334,7 @@ def main():
             work_dir=args.work,
             langs=args.langs,
             metrics=TASK_CONF["metrics"],
+            batch_size=args.batch_size,
         )
 
 def parse_args():
@@ -337,6 +370,9 @@ def parse_args():
     )
     eval_parser.add_argument(
         "-p", "--prompt", type=str, default=TRANSLATE_PROMPT, help="Prompt template to use for translation"
+    )
+    eval_parser.add_argument(
+        "-b", "--batch", dest="batch_size", type=int, default=DEF_BATCH_SIZE, help="Batch size for translation"
     )
     eval_parser.add_argument("-pb", "--progress", action="store_true", help="Show progress bar")
     args = parser.parse_args()

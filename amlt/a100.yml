@@ -1,0 +1,33 @@
+description: wmt25-compression-task
+
+target:
+    service: sing
+    name: ast-sing-prod02-eus  # A100 cluster
+
+environment:
+    registry: thammegowda.azurecr.io
+    image: wmt25-model-compression:v1
+    setup:
+      - echo "==== MY SETUP BEGIN ===="
+      - git config --global credential.helper store
+      - echo "==== MY SETUP END ===="
+code:
+    local_dir: $CONFIG_DIR/..
+
+storage:
+    #drive1:  optional:
+      #storage_account_name: {account}
+      #container_name: {container}
+      #mount_dir: /mnt/{account}/{container}
+      #is_output: True
+
+jobs:
+    - name: debug-node
+      sku: 80G1
+      identity: managed
+      process_count_per_node: 1
+      submit_args: &sargs
+        env:
+          AMLT_DOCKERFILE_TEMPLATE: none
+      command:
+        - sleep 5d
