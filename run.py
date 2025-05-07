@@ -9,6 +9,7 @@
 #
 import argparse
 import logging as LOG
+import os
 from pathlib import Path
 from typing import List
 import subprocess as sp
@@ -26,7 +27,7 @@ LOG.basicConfig(
 )
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-HF_CACHE = Path.home() / ".cache" / "huggingface" / "hub"
+HF_CACHE = Path(os.getenv("HF_HOME", default = Path.home() / ".cache" / "huggingface")) / "hub"
 
 TASK_CONF = {
     "langs": {
@@ -339,7 +340,7 @@ def main():
     args = parse_args()
 
     if args.command == "setup":
-        setup_task(work_dir=args.work)
+        setup_task(work_dir=args.work, cache_dir=args.cache)
     elif args.command == "eval":
         llm = LLMWrapper(
             model_dir=args.model,
