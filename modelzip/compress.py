@@ -55,7 +55,8 @@ def compress_model(model_dir: Path, output_dir: Path, approach="bnb-8bit"):
 def main():
     parser = argparse.ArgumentParser(description="Download and compress models for WMT25")
     parser.add_argument(
-        "-m", "--model", type=Path, required=True, help="Path to base model directory"
+        "-m", "--model", type=Path, help="Path to base model directory",
+        default="./workdir/models/aya-expanse-8b-base"
     )
     args = parser.parse_args()
     model_dir = args.model
