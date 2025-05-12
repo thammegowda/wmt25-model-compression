@@ -30,7 +30,7 @@ def get_run_cmd(model_dir: Path) -> str:
     Looks for run.py, run.sh, or run (executable)
     """
 
-    run_scripts = [model_dir / "run.py", model_dir / "run.sh", model_dir / "run"]
+    run_scripts = [model_dir / "run.sh", model_dir / "run.py", model_dir / "run"]
 
     if not any(script.exists() for script in run_scripts):
         raise ValueError(f"Model directory {model_dir} does not contain a run.py or run.sh script")

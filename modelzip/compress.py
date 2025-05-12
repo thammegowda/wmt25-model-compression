@@ -42,12 +42,15 @@ def compress_model(model_dir: Path, output_dir: Path, approach="bnb-8bit"):
         tokenizer.save_pretrained(output_dir)
         model.save_pretrained(output_dir)
         # copy run.py
-        src_run = model_dir / "run.py"
-        dst_run = output_dir / "run.py"
-        if src_run.exists():
-            dst_run.write_text(src_run.read_text())
-        else:
-            LOG.warning(f"run.py not found in {model_dir}; skipping")
+        copy_files = ["run.py", "run.sh"]
+        for file in copy_files:
+            src_file = model_dir / file
+            dst_file = output_dir / file
+            if src_file.exists():
+                dst_file.write_text(src_file.read_text())
+            else:
+                LOG.warning(f"{file} not found in {model_dir}; skipping")
+
         flag_file.touch()
         LOG.info(f"Saved {model_dir.name} with {approach} at {output_dir}")
 

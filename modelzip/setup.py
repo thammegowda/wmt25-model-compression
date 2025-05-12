@@ -77,12 +77,12 @@ def setup_model(work_dir: Path, cache_dir: Path, model_ids = TASK_CONF["models"]
         model_dir.mkdir(parents=True, exist_ok=True)
         tokenizer.save_pretrained(model_dir)
         model.save_pretrained(model_dir)
+
         # copy baseline.py as run.py inside the model_dir
-        run_script = model_dir / "run.py"
-        baseline_script = Path(__file__).parent / "baseline.py"
+        run_script = model_dir / "run.sh"
+        baseline_script = Path(__file__).parent / "run.sh"
         assert baseline_script.exists(), f"Baseline script {baseline_script} does not exist"
         run_script.write_text(baseline_script.read_text())
-        #run_script.chmod(run_script.stat().st_mode | 0o111)  # make it executable
 
         flag_file.touch()
         LOG.info(f"Model {model_id} saved successfully at {model_dir}")
