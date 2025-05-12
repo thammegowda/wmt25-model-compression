@@ -4,6 +4,10 @@ wmt25-compression
 .amltconfig
 .amltignore
 *~
+*.egg-info/
+*.egg
+*.whl
+*.tar.gz
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
