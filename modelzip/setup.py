@@ -5,9 +5,9 @@
 """
 Setup script for WMT25 models
 
-This script downloads the test sets and models for WMT25 Model Compression Challenge
+This script downloads models and development sets for WMT25 Model Compression Shared Task.
 For constrained task, the setup should work out of the box.
-For the unconstrained task, participants may tweak this to download their own models and test sets. 
+For the unconstrained task, participants may tweak this to download their own models.
 """
 
 import argparse
@@ -15,7 +15,7 @@ import logging as LOG
 import subprocess as sp
 from pathlib import Path
 
-from modelzip.config import WORK_DIR, DEF_LANG_PAIRS, TASK_CONF, HF_CACHE
+from modelzip.config import DEF_LANG_PAIRS, TASK_CONF, HF_CACHE
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 LOG.basicConfig(level=LOG.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -89,13 +89,13 @@ def setup_model(work_dir: Path, cache_dir: Path, model_ids = TASK_CONF["models"]
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Setup WMT25 test sets",
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("-w", "--work", type=Path, default=WORK_DIR, help="Work directory")
+    parser = argparse.ArgumentParser(description="Setup WMT25 shared task")
+    parser.add_argument("-w", "--work", type=Path, default="workdir", help="Work directory")
     parser.add_argument("-l", "--langs", nargs='+', help="Language pairs to setup")
     parser.add_argument("-t", "--task", choices=["eval", "model", "all"], default="all", help="Task to perform")
     parser.add_argument("-c", "--cache", type=Path, default=HF_CACHE, help="Cache directory for models")
     args = parser.parse_args()
+
     # dispatch based on task
     if args.task in ('model', 'all'):
         setup_model(work_dir=args.work, cache_dir=args.cache)

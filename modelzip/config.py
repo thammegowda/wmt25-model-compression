@@ -4,8 +4,6 @@ from pathlib import Path
 
 LOG.basicConfig(level=LOG.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-# Default working directory
-WORK_DIR = Path("wmt25-compression")
 # Hugging Face cache directory
 HF_CACHE = Path(os.getenv("HF_HOME", default = Path.home() / ".cache" / "huggingface")) / "hub"
 
