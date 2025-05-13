@@ -105,4 +105,21 @@ wmt24.jpn-zho.zho.aya-expanse-8b.base.out.chrf      24.4
 
 ## 3. Submission preparation
 
-See `Dockerfile` for an example.
+See `Dockerfile` for an example. You can use [modelzip/baseline.py](modelzip/baseline.py)
+as a template to create your `run.py` script that uses the compressed model to
+translate the input. Specifically, you just need to implement your own version
+of the `LLMWrapper` class. Then you can simply add a `run.sh` file containing:
+
+```bash
+python run.py $1 $2 <&0 >&1
+```
+
+Once everything is ready, you can create a Docker image (in this case we name
+it `wmt2025_modelcompression`, but you can chose your preferred name) with:
+```bash
+docker build -t wmt2025_modelcompression .
+```
+Then, the image can be stored in a `tar` file with:
+```bash
+docker save --output $DOCKER_IMAGE_FILENAME.tar wmt2025_modelcompression
+```
