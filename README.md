@@ -30,8 +30,8 @@ requirements below.
     - `$batch_size`: Positive integer
     - The script must run without accessing Internet.
 
-To participate, post the Docker image online and send links with sha512sum sums
-of all files to the task organizer's email.
+To participate, fill the form mentioned in the official website, where you need to
+submit a public link to the Docker image online with its sha512sum sum.
 
 ### Example Usage
 
@@ -47,7 +47,6 @@ container_id="$(docker run -itd ${opt_memory} --memory-swap=0 ${image_name} bash
 
 1. Installation
 ```bash
-pip install -r requirements.txt
 pip install -e .
 ```
 
@@ -63,6 +62,7 @@ huggingface-cli login
 python -m modelzip.setup
 ```
 
+This command will create the following
 **Directory Structure:**
 ```
 workdir/
@@ -80,6 +80,9 @@ workdir/
 ```bash
 python -m modelzip.compress
 ```
+
+This command will create two baselines in addition to the base aya model.
+The compressed models are saved in `workdir/models/`.
 
 ### Running Baselines
 
