@@ -116,7 +116,7 @@ def main():
         prompt_template=args.prompt,
         progress_bar=args.progress,
     )
-    if args.inp is sys.stdin:
+    if args.input is sys.stdin:
         LOG.info(
             "Reading from stdin"
         )  # just in case if we forget to pass input via STDIN
