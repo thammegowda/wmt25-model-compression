@@ -120,7 +120,8 @@ def main():
         LOG.info(
             "Reading from stdin"
         )  # just in case if we forget to pass input via STDIN
-    # buffering all inputs into one big maxibatch for sorting based on length, assuming test sets are not too big
+    # buffering all inputs into one big maxibatch for sorting based on length,
+    # assuming test sets are not too big
     lines = args.input.read().splitlines()
     lines = [x.strip() for x in lines]  # remove empty lines
     assert not any(
@@ -143,7 +144,8 @@ def parse_args():
     parser.add_argument("langs", help="Lang pairs to evaluate, eg, 'ces-deu")
     parser.add_argument("batch", dest="batch_size", type=int, default=DEF_BATCH_SIZE)
 
-    # this script will/should be placed inside model directory for each model and called run.py, so assume this file's parent dir as model dir
+    # this script will/should be placed inside model directory for each model and called run.py,
+    # so assume this file's parent dir as model dir
     my_name = Path(__file__).name
     my_dir = Path(__file__).parent
     if my_name == "run.py":
@@ -163,15 +165,6 @@ def parse_args():
             help="Path to model directory that is compatible for HuggingFace Transformers",
         )
 
-    # these are optional args. They are not positional args for simplicity
-    parser.add_argument(
-        "-b",
-        "--batch-size",
-        dest="batch_size",
-        type=int,
-        default=DEF_BATCH_SIZE,
-        help="Batch size for translation",
-    )
     # optional args. Will not be set during evaluation, so make sure the defaults are correct
     parser.add_argument(
         "-i",
