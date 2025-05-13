@@ -88,7 +88,7 @@ The compressed models are saved in `workdir/models/`.
 
 ```bash
 for m in workdir/models/aya-expanse-8b-*; do
-  python -m modelzip.eval -m $m
+  python -m modelzip.evaluate -m $m
 done
 
 python -m modelzip.report
