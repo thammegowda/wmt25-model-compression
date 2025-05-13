@@ -9,6 +9,7 @@ HF_CACHE = (
     Path(os.getenv("HF_HOME", default=Path.home() / ".cache" / "huggingface")) / "hub"
 )
 
+WORK_DIR = "./workdir"
 
 # Task configuration
 TASK_CONF = {

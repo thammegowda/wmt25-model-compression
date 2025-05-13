@@ -17,7 +17,7 @@ from pathlib import Path
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from modelzip.config import DEF_LANG_PAIRS, HF_CACHE, TASK_CONF
+from modelzip.config import DEF_LANG_PAIRS, HF_CACHE, TASK_CONF, WORK_DIR
 
 LOG.basicConfig(level=LOG.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -108,7 +108,7 @@ def setup_model(work_dir: Path, cache_dir: Path, model_ids=TASK_CONF["models"]):
 def main():
     parser = argparse.ArgumentParser(description="Setup WMT25 shared task")
     parser.add_argument(
-        "-w", "--work", type=Path, default="workdir", help="Work directory"
+        "-w", "--work", type=Path, default=WORK_DIR, help="Work directory"
     )
     parser.add_argument("-l", "--langs", nargs="+", help="Language pairs to setup")
     parser.add_argument(
