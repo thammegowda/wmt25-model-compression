@@ -11,7 +11,7 @@ prints the scores in a tabular format.
 import argparse
 from pathlib import Path
 
-from modelzip.config import WORK_DIR, LOG
+from modelzip.config import LOG, WORK_DIR
 
 
 def report(work_dir: Path, fmt: str = "tsv"):
@@ -33,10 +33,15 @@ def report(work_dir: Path, fmt: str = "tsv"):
 
 def main():
     parser = argparse.ArgumentParser(description="Report scores for WMT25 models")
-    parser.add_argument("-w", "--work", type=Path, default=WORK_DIR, help="Working directory")
-    parser.add_argument("-f", "--format", choices=["csv", "tsv"], default="tsv", help="Output format")
+    parser.add_argument(
+        "-w", "--work", type=Path, default=WORK_DIR, help="Working directory"
+    )
+    parser.add_argument(
+        "-f", "--format", choices=["csv", "tsv"], default="tsv", help="Output format"
+    )
     args = parser.parse_args()
     report(work_dir=args.work, fmt=args.format)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

@@ -12,7 +12,7 @@ import subprocess as sp
 import sys
 from pathlib import Path
 
-from modelzip.config import WORK_DIR, DEF_LANG_PAIRS, TASK_CONF, DEF_BATCH_SIZE
+from modelzip.config import DEF_BATCH_SIZE, DEF_LANG_PAIRS, TASK_CONF, WORK_DIR
 
 
 def get_score(src_file: Path, out_file: Path, ref_file: Path, metric: str):
@@ -33,7 +33,9 @@ def get_run_cmd(model_dir: Path) -> str:
     run_scripts = [model_dir / "run.py", model_dir / "run.sh", model_dir / "run"]
 
     if not any(script.exists() for script in run_scripts):
-        raise ValueError(f"Model directory {model_dir} does not contain a run.py or run.sh script")
+        raise ValueError(
+            f"Model directory {model_dir} does not contain a run.py or run.sh script"
+        )
     run_script = next(script for script in run_scripts if script.exists())
     if run_script.suffix == ".sh":
         run_cmd = f"bash {run_script}"
@@ -64,7 +66,9 @@ def evaluate(
             if not out.exists() or out.stat().st_size == 0:
                 tmp_file = out.with_suffix(out.suffix + ".tmp")
                 tmp_file.unlink(missing_ok=True)
-                run_cmd_full = f"{run_cmd} {pair} {batch_size} < {src_file} > {tmp_file}"
+                run_cmd_full = (
+                    f"{run_cmd} {pair} {batch_size} < {src_file} > {tmp_file}"
+                )
                 LOG.info(f"Running command: {run_cmd_full}")
                 try:
                     sp.check_call(run_cmd_full, shell=True)
@@ -85,20 +89,44 @@ def evaluate(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Evaluate models on WMT25",
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description="Evaluate models on WMT25",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
     parser.add_argument("-w", "--work", type=Path, default=WORK_DIR)
-    parser.add_argument("-l", "--langs", nargs="+", help="Lang pairs to evaluate", default=DEF_LANG_PAIRS)
-    parser.add_argument("-b", "--batch", dest="batch_size", type=int, default=DEF_BATCH_SIZE)
     parser.add_argument(
-        "-m", "--model", type=Path, required=True, help="Path to model directory. Must have a run.py or run.sh script"
+        "-l",
+        "--langs",
+        nargs="+",
+        help="Lang pairs to evaluate",
+        default=DEF_LANG_PAIRS,
     )
     parser.add_argument(
-        "-M", "--metrics", nargs="+", default=TASK_CONF["metrics"], help="Metrics to use for evaluation"
+        "-b", "--batch", dest="batch_size", type=int, default=DEF_BATCH_SIZE
+    )
+    parser.add_argument(
+        "-m",
+        "--model",
+        type=Path,
+        required=True,
+        help="Path to model directory. Must have a run.py or run.sh script",
+    )
+    parser.add_argument(
+        "-M",
+        "--metrics",
+        nargs="+",
+        default=TASK_CONF["metrics"],
+        help="Metrics to use for evaluation",
     )
     args = parser.parse_args()
     tests_dir = args.work / "tests"
-    evaluate(tests_dir, args.model, langs=args.langs, batch_size=args.batch_size, metrics=args.metrics)
+    evaluate(
+        tests_dir,
+        args.model,
+        langs=args.langs,
+        batch_size=args.batch_size,
+        metrics=args.metrics,
+    )
 
 
 if __name__ == "__main__":
