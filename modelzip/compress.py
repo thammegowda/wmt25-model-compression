@@ -10,12 +10,11 @@ Organizers would be using the output directory of this script to run the evaluat
 """
 
 import argparse
-import logging as LOG
 from pathlib import Path
 
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
-from modelzip.config import LOG, TASK_CONF, WORK_DIR
+from modelzip.config import LOG
 
 
 def compress_model(model_dir: Path, output_dir: Path, approach="bnb-8bit"):
