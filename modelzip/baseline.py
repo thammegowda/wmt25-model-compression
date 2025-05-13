@@ -142,7 +142,7 @@ def parse_args():
     )
     # eval script only sets these two required args. They are positional args for simplicity
     parser.add_argument("langs", help="Lang pairs to evaluate, eg, 'ces-deu")
-    parser.add_argument("batch", dest="batch_size", type=int, default=DEF_BATCH_SIZE)
+    parser.add_argument("batch_size", type=int, default=DEF_BATCH_SIZE)
 
     # this script will/should be placed inside model directory for each model and called run.py,
     # so assume this file's parent dir as model dir
