@@ -12,7 +12,7 @@ import subprocess as sp
 import sys
 from pathlib import Path
 
-from modelzip.config import WORK_DIR, DEF_LANG_PAIRS, TASK_CONF, DEF_BATCH_SIZE
+from modelzip.config import DEF_BATCH_SIZE, DEF_LANG_PAIRS, TASK_CONF, WORK_DIR
 
 
 def get_score(src_file: Path, out_file: Path, ref_file: Path, metric: str):
@@ -58,7 +58,7 @@ def evaluate(
         src, tgt = pair.split("-")
         lang_dir = tests_dir / pair
         for src_file in lang_dir.glob(f"*.{src}-{tgt}.{src}"):
-            test = src_file.stem.replace(f".{src}-{tgt}.{src}", "")
+            test = str(src_file).replace(f".{src}-{tgt}.{src}", "")
             ref = lang_dir / f"{test}.{src}-{tgt}.{tgt}"
             out = lang_dir / f"{test}.{src}-{tgt}.{tgt}.{model_name}.out"
             if not out.exists() or out.stat().st_size == 0:
@@ -85,20 +85,42 @@ def evaluate(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Evaluate models on WMT25",
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description="Evaluate models on WMT25",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
     parser.add_argument("-w", "--work", type=Path, default=WORK_DIR)
-    parser.add_argument("-l", "--langs", nargs="+", help="Lang pairs to evaluate", default=DEF_LANG_PAIRS)
+    parser.add_argument(
+        "-l",
+        "--langs",
+        nargs="+",
+        help="Lang pairs to evaluate",
+        default=DEF_LANG_PAIRS,
+    )
     parser.add_argument("-b", "--batch", dest="batch_size", type=int, default=DEF_BATCH_SIZE)
     parser.add_argument(
-        "-m", "--model", type=Path, required=True, help="Path to model directory. Must have a run.py or run.sh script"
+        "-m",
+        "--model",
+        type=Path,
+        required=True,
+        help="Path to model directory. Must have a run.py or run.sh script",
     )
     parser.add_argument(
-        "-M", "--metrics", nargs="+", default=TASK_CONF["metrics"], help="Metrics to use for evaluation"
+        "-M",
+        "--metrics",
+        nargs="+",
+        default=TASK_CONF["metrics"],
+        help="Metrics to use for evaluation",
     )
     args = parser.parse_args()
     tests_dir = args.work / "tests"
-    evaluate(tests_dir, args.model, langs=args.langs, batch_size=args.batch_size, metrics=args.metrics)
+    evaluate(
+        tests_dir,
+        args.model,
+        langs=args.langs,
+        batch_size=args.batch_size,
+        metrics=args.metrics,
+    )
 
 
 if __name__ == "__main__":

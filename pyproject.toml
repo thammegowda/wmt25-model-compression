@@ -12,7 +12,7 @@ authors = [
     # contant: { name="Thamme Gowda", email="tgowdan@microsoft.com" },
 ]
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 dependencies = [
     # already installed in docker
     "torch==2.7.0",
@@ -41,3 +41,13 @@ version = {attr = "modelzip.__version__"}
 include = ["modelzip*"]  # ["*"] by default
 exclude = ["tests*", "tmp*", "build*", "dist*"]    # empty by default
 #####################
+
+
+[project.optional-dependencies]
+dev = ["black >= 25.0"]
+
+[tool.black]
+line-length = 110
+target-version = ['py310', 'py311', 'py312' ]
+include = '\.pyi?$'
+#skip-string-normalization = true

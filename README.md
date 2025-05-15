@@ -30,8 +30,8 @@ requirements below.
     - `$batch_size`: Positive integer
     - The script must run without accessing Internet.
 
-To participate, post the Docker image online and send links with sha512sum sums
-of all files to the task organizer's email.
+To participate, fill the form mentioned in the official website, where you need to
+submit a public link to the Docker image online with its sha512sum sum.
 
 ### Example Usage
 
@@ -47,7 +47,6 @@ container_id="$(docker run -itd ${opt_memory} --memory-swap=0 ${image_name} bash
 
 1. Installation
 ```bash
-pip install -r requirements.txt
 pip install -e .
 ```
 
@@ -63,6 +62,7 @@ huggingface-cli login
 python -m modelzip.setup
 ```
 
+This command will create the following
 **Directory Structure:**
 ```
 workdir/
@@ -81,11 +81,14 @@ workdir/
 python -m modelzip.compress
 ```
 
+This command will create two baselines in addition to the base aya model.
+The compressed models are saved in `workdir/models/`.
+
 ### Running Baselines
 
 ```bash
 for m in workdir/models/aya-expanse-8b-*; do
-  python -m modelzip.eval -m $m
+  python -m modelzip.evaluate -m $m
 done
 
 python -m modelzip.report
@@ -102,4 +105,21 @@ wmt24.jpn-zho.zho.aya-expanse-8b.base.out.chrf      24.4
 
 ## 3. Submission preparation
 
-See `Dockerfile` for an example.
+See `Dockerfile` for an example. You can use [modelzip/baseline.py](modelzip/baseline.py)
+as a template to create your `run.py` script that uses the compressed model to
+translate the input. Specifically, you just need to implement your own version
+of the `LLMWrapper` class. Then you can simply add a `run.sh` file containing:
+
+```bash
+python run.py $1 $2 <&0 >&1
+```
+
+Once everything is ready, you can create a Docker image (in this case we name
+it `wmt2025_modelcompression`, but you can chose your preferred name) with:
+```bash
+docker build -t wmt2025_modelcompression .
+```
+Then, the image can be stored in a `tar` file with:
+```bash
+docker save --output $DOCKER_IMAGE_FILENAME.tar wmt2025_modelcompression
+```

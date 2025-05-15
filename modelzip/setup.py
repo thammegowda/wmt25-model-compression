@@ -15,8 +15,9 @@ import logging as LOG
 import subprocess as sp
 from pathlib import Path
 
-from modelzip.config import DEF_LANG_PAIRS, TASK_CONF, HF_CACHE
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+from modelzip.config import DEF_LANG_PAIRS, HF_CACHE, TASK_CONF, WORK_DIR
 
 LOG.basicConfig(level=LOG.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -35,7 +36,12 @@ def setup_eval(work_dir: Path, langs=None):
         for test_name, get_cmd in TASK_CONF["langs"][lang_pair].items():
             src_file = lang_dir / f"{test_name}.{src}-{tgt}.{src}"
             ref_file = lang_dir / f"{test_name}.{src}-{tgt}.{tgt}"
-            if src_file.exists() and ref_file.exists() and src_file.stat().st_size > 0 and ref_file.stat().st_size > 0:
+            if (
+                src_file.exists()
+                and ref_file.exists()
+                and src_file.stat().st_size > 0
+                and ref_file.stat().st_size > 0
+            ):
                 LOG.info(f"Test files exist for {lang_pair}:{test_name}")
                 continue
             LOG.info(f"Fetching {test_name} via: {get_cmd}")
@@ -53,7 +59,7 @@ def setup_eval(work_dir: Path, langs=None):
             LOG.info(f"Created test files {src_file}, {ref_file}")
 
 
-def setup_model(work_dir: Path, cache_dir: Path, model_ids = TASK_CONF["models"]):
+def setup_model(work_dir: Path, cache_dir: Path, model_ids=TASK_CONF["models"]):
     # downloads
     work_dir = Path(work_dir)
     models_dir = work_dir / "models"
@@ -90,18 +96,24 @@ def setup_model(work_dir: Path, cache_dir: Path, model_ids = TASK_CONF["models"]
 
 def main():
     parser = argparse.ArgumentParser(description="Setup WMT25 shared task")
-    parser.add_argument("-w", "--work", type=Path, default="workdir", help="Work directory")
-    parser.add_argument("-l", "--langs", nargs='+', help="Language pairs to setup")
-    parser.add_argument("-t", "--task", choices=["eval", "model", "all"], default="all", help="Task to perform")
+    parser.add_argument("-w", "--work", type=Path, default=WORK_DIR, help="Work directory")
+    parser.add_argument("-l", "--langs", nargs="+", help="Language pairs to setup")
+    parser.add_argument(
+        "-t",
+        "--task",
+        choices=["eval", "model", "all"],
+        default="all",
+        help="Task to perform",
+    )
     parser.add_argument("-c", "--cache", type=Path, default=HF_CACHE, help="Cache directory for models")
     args = parser.parse_args()
 
     # dispatch based on task
-    if args.task in ('model', 'all'):
+    if args.task in ("model", "all"):
         setup_model(work_dir=args.work, cache_dir=args.cache)
-    if args.task in ('eval', 'all'):
+    if args.task in ("eval", "all"):
         setup_eval(work_dir=args.work, langs=args.langs)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
