@@ -5,27 +5,15 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "modelzip"
 # version = "0.1.0"
-dynamic = ["version"] #dependencies",
+dynamic = ["version", "dependencies"]
 description = "Model Compression for WMT 2025"
 authors = [
     { name="WMT25 Organizers", email="nomail@example.com"}
     # contant: { name="Thamme Gowda", email="tgowdan@microsoft.com" },
 ]
 readme = "README.md"
-requires-python = ">=3.8"
-dependencies = [
-    # already installed in docker
-    "torch==2.7.0",
-    "transformers==4.46.3",
-    "accelerate==1.6.0",
-    "tokenizers==0.20.3",
-    # testsets and metrics
-    "sacrebleu",
-    "mtdata",
-    "pymarian",
-    # baseline/demos
-    "bitsandbytes==0.45.3",
-]
+requires-python = ">=3.10"
+
 
 [project.urls]
 Homepage = "https://github.com/thammegowda/wmt25-model-compression"
@@ -33,7 +21,7 @@ Repository = "https://github.com/thammegowda/wmt25-model-compression"
 
 [tool.setuptools.dynamic]
 version = {attr = "modelzip.__version__"}
-#dependencies = {file = "requirements.txt"}
+dependencies = {file = "requirements.txt"}
 
 
 [tool.setuptools.packages.find]
@@ -41,3 +29,13 @@ version = {attr = "modelzip.__version__"}
 include = ["modelzip*"]  # ["*"] by default
 exclude = ["tests*", "tmp*", "build*", "dist*"]    # empty by default
 #####################
+
+
+[project.optional-dependencies]
+dev = ["black >= 25.0"]
+
+[tool.black]
+line-length = 110
+target-version = ['py310', 'py311', 'py312' ]
+include = '\.pyi?$'
+#skip-string-normalization = true

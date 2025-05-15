@@ -11,7 +11,7 @@ prints the scores in a tabular format.
 import argparse
 from pathlib import Path
 
-from modelzip.config import WORK_DIR, LOG
+from modelzip.config import LOG, WORK_DIR
 
 
 def report(work_dir: Path, fmt: str = "tsv"):
@@ -38,5 +38,6 @@ def main():
     args = parser.parse_args()
     report(work_dir=args.work, fmt=args.format)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
