@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.8.0-cudnn-devel-ubuntu22.04
+FROM nvidia/cuda:12.6.0-cudnn-devel-ubuntu22.04
 LABEL description="Dockerfile for WMT25 Model Compression Shared Task"
 LABEL maintainer="WMT25 Model Compression Task Organizers"
 LABEL version="1.0"
@@ -10,10 +10,12 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 # Install default packages
 RUN apt update && apt upgrade --fix-missing -y
-RUN apt install -y git python3 python3-pip emacs-nox vim wget curl ncdu tmux htop tree
+RUN apt install -y git python3 python3-pip emacs-nox vim wget curl ncdu tmux htop tree && \
+    apt clean && rm -rf /var/lib/apt/lists/*
 RUN python3 -m pip install --no-cache-dir --upgrade pip
 
-
+# install torch built against the CUDA version of docker image; e.g. 12.8
+# RUN python3 -m pip install --no-cache-dir torch==2.7.0 --index-url https://download.pytorch.org/whl/cu128
 WORKDIR /work/wmt25-model-compression
 COPY requirements.txt pyproject.toml README.md ./
 COPY modelzip/ modelzip/
