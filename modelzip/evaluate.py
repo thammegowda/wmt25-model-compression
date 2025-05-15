@@ -48,7 +48,7 @@ def evaluate(
         src, tgt = pair.split("-")
         lang_dir = tests_dir / pair
         for src_file in lang_dir.glob(f"*.{src}-{tgt}.{src}"):
-            test = str(src_file).replace(f".{src}-{tgt}.{src}", "")
+            test = src_file.name.replace(f".{src}-{tgt}.{src}", "")
             ref = lang_dir / f"{test}.{src}-{tgt}.{tgt}"
             out = lang_dir / f"{test}.{src}-{tgt}.{tgt}.{model_name}.out"
             if not out.exists() or out.stat().st_size == 0:

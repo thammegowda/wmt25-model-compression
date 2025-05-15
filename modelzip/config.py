@@ -14,9 +14,10 @@ TASK_CONF = {
     "langs": {
         "ces-deu": {"wmt19": "sacrebleu -t wmt19 -l cs-de --echo src ref"},
         "jpn-zho": {"wmt24": "sacrebleu -t wmt24 -l ja-zh --echo src ref:refA"},
+        "eng-ara": {"wmt24pp": "mtdata echo Google-wmt24pp-1-eng-ara_SA | sed 's/\\r//g'"},
     },
     "models": ["CohereLabs/aya-expanse-8b"],
-    "metrics": ["chrf"],
+    "metrics": ["chrf", "wmt22-comet-da"], # "wmt22-cometkiwi-da" is a gated model
 }
 
 # Default language pairs
