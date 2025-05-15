@@ -26,21 +26,11 @@ def get_score(src_file: Path, out_file: Path, ref_file: Path, metric: str):
 
 def get_run_cmd(model_dir: Path) -> str:
     """finds a run script inside the model_dir and returns the command to run it
-
-    Looks for run.py, run.sh, or run (executable)
+    Looks for run.sh
     """
-
-    run_scripts = [model_dir / "run.sh", model_dir / "run.py", model_dir / "run"]
-
-    if not any(script.exists() for script in run_scripts):
-        raise ValueError(f"Model directory {model_dir} does not contain a run.py or run.sh script")
-    run_script = next(script for script in run_scripts if script.exists())
-    if run_script.suffix == ".sh":
-        run_cmd = f"bash {run_script}"
-    elif run_script.suffix == ".py":
-        run_cmd = f"{sys.executable} {run_script}"
-    else:  # hope it got its own shebang and is executable
-        run_cmd = f"{run_script}"
+    run_script = model_dir / "run.sh"
+    assert run_script.exists(), f"run.sh not found in {model_dir}"
+    run_cmd = f"bash {run_script}"
     return run_cmd
 
 
