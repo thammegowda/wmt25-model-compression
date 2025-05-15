@@ -9,7 +9,7 @@ tokenizers==0.20.3
 
 # testsets and metrics
 sacrebleu==2.5.1
-mtdata==0.4.2
+mtdata[hf]==0.4.3
 pymarian==1.12.31
 
 # baseline
