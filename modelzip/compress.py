@@ -53,9 +53,7 @@ def compress_model(model_dir: Path, output_dir: Path, approach="bnb-8bit"):
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Download and compress models for WMT25"
-    )
+    parser = argparse.ArgumentParser(description="Download and compress models for WMT25")
     parser.add_argument(
         "-m",
         "--model",

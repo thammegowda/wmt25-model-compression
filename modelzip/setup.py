@@ -29,9 +29,7 @@ def setup_eval(work_dir: Path, langs=None):
     tests_dir.mkdir(parents=True, exist_ok=True)
     langs = langs or DEF_LANG_PAIRS
     for lang_pair in langs:
-        assert (
-            lang_pair in TASK_CONF["langs"]
-        ), f"Language pair {lang_pair} not in config"
+        assert lang_pair in TASK_CONF["langs"], f"Language pair {lang_pair} not in config"
         src, tgt = lang_pair.split("-")
         lang_dir = tests_dir / lang_pair
         lang_dir.mkdir(parents=True, exist_ok=True)
@@ -47,12 +45,7 @@ def setup_eval(work_dir: Path, langs=None):
                 LOG.info(f"Test files exist for {lang_pair}:{test_name}")
                 continue
             LOG.info(f"Fetching {test_name} via: {get_cmd}")
-            lines = (
-                sp.check_output(get_cmd, shell=True, text=True)
-                .strip()
-                .replace("\r", "")
-                .split("\n")
-            )
+            lines = sp.check_output(get_cmd, shell=True, text=True).strip().replace("\r", "").split("\n")
             lines = [x.strip().split("\t") for x in lines]
             if "mtdata" in get_cmd:
                 lines = [x[:2] for x in lines]
@@ -77,9 +70,7 @@ def setup_model(work_dir: Path, cache_dir: Path, model_ids=TASK_CONF["models"]):
         model_dir.mkdir(parents=True, exist_ok=True)
         flag_file = model_dir / "._OK"
         if flag_file.exists():
-            LOG.info(
-                f"Model {model_id} already exists; rm {flag_file} to force download"
-            )
+            LOG.info(f"Model {model_id} already exists; rm {flag_file} to force download")
             continue
 
         loader_args = dict(cache_dir=cache_dir)
@@ -95,9 +86,7 @@ def setup_model(work_dir: Path, cache_dir: Path, model_ids=TASK_CONF["models"]):
         # copy baseline.py as run.py inside the model_dir
         run_script = model_dir / "run.py"
         baseline_script = Path(__file__).parent / "baseline.py"
-        assert (
-            baseline_script.exists()
-        ), f"Baseline script {baseline_script} does not exist"
+        assert baseline_script.exists(), f"Baseline script {baseline_script} does not exist"
         run_script.write_text(baseline_script.read_text())
         # run_script.chmod(run_script.stat().st_mode | 0o111)  # make it executable
 
@@ -107,9 +96,7 @@ def setup_model(work_dir: Path, cache_dir: Path, model_ids=TASK_CONF["models"]):
 
 def main():
     parser = argparse.ArgumentParser(description="Setup WMT25 shared task")
-    parser.add_argument(
-        "-w", "--work", type=Path, default=WORK_DIR, help="Work directory"
-    )
+    parser.add_argument("-w", "--work", type=Path, default=WORK_DIR, help="Work directory")
     parser.add_argument("-l", "--langs", nargs="+", help="Language pairs to setup")
     parser.add_argument(
         "-t",
@@ -118,9 +105,7 @@ def main():
         default="all",
         help="Task to perform",
     )
-    parser.add_argument(
-        "-c", "--cache", type=Path, default=HF_CACHE, help="Cache directory for models"
-    )
+    parser.add_argument("-c", "--cache", type=Path, default=HF_CACHE, help="Cache directory for models")
     args = parser.parse_args()
 
     # dispatch based on task

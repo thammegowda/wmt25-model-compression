@@ -36,23 +36,17 @@ class LLMWrapper:
     @property
     def model(self):
         if self._model is None:
-            self._model = AutoModelForCausalLM.from_pretrained(
-                self.model_dir, device_map="auto"
-            )
+            self._model = AutoModelForCausalLM.from_pretrained(self.model_dir, device_map="auto")
             self._model.eval()
         return self._model
 
     @property
     def tokenizer(self):
         if self._tokenizer is None:
-            self._tokenizer = AutoTokenizer.from_pretrained(
-                self.model_dir, use_fast=True
-            )
+            self._tokenizer = AutoTokenizer.from_pretrained(self.model_dir, use_fast=True)
         return self._tokenizer
 
-    def translate_lines(
-        self, pair: str, lines: List[str], batch_size: int = DEF_BATCH_SIZE
-    ):
+    def translate_lines(self, pair: str, lines: List[str], batch_size: int = DEF_BATCH_SIZE):
         src, tgt = pair.split("-")
         src_lang = LANGS_MAP[src]
         tgt_lang = LANGS_MAP[tgt]
@@ -64,25 +58,18 @@ class LLMWrapper:
 
         indexed.sort(key=lambda x: length(x[1]), reverse=True)
 
-        batches = [
-            indexed[i : i + batch_size] for i in range(0, len(indexed), batch_size)
-        ]
+        batches = [indexed[i : i + batch_size] for i in range(0, len(indexed), batch_size)]
         out_indexed = []
         pbar = tqdm(total=len(indexed), disable=not self.progress_bar)
         max_length = self.model.config.max_position_embeddings
         gen_args = dict(max_new_tokens=max_length, do_sample=False, num_beams=1)
         for batch in batches:
             ids, texts = zip(*batch)
-            prompts = [
-                self.prompt_template.format(src=src_lang, tgt=tgt_lang, text=t)
-                for t in texts
-            ]
+            prompts = [self.prompt_template.format(src=src_lang, tgt=tgt_lang, text=t) for t in texts]
             if self.use_chat_template:
                 chats = [[{"role": "user", "content": p}] for p in prompts]
                 prompts = [
-                    self.tokenizer.apply_chat_template(
-                        c, tokenize=False, add_generation_prompt=True
-                    )
+                    self.tokenizer.apply_chat_template(c, tokenize=False, add_generation_prompt=True)
                     for c in chats
                 ]
             inputs = self.tokenizer(
@@ -96,9 +83,7 @@ class LLMWrapper:
             seq_len = inputs["input_ids"].shape[1]
             hyps = [
                 h.replace("\n", " ")
-                for h in self.tokenizer.batch_decode(
-                    outputs[:, seq_len:], skip_special_tokens=True
-                )
+                for h in self.tokenizer.batch_decode(outputs[:, seq_len:], skip_special_tokens=True)
             ]
             out_indexed.extend(zip(ids, hyps))
             pbar.update(len(batch))
@@ -117,16 +102,12 @@ def main():
         progress_bar=args.progress,
     )
     if args.input is sys.stdin:
-        LOG.info(
-            "Reading from stdin"
-        )  # just in case if we forget to pass input via STDIN
+        LOG.info("Reading from stdin")  # just in case if we forget to pass input via STDIN
     # buffering all inputs into one big maxibatch for sorting based on length,
     # assuming test sets are not too big
     lines = args.input.read().splitlines()
     lines = [x.strip() for x in lines]  # remove empty lines
-    assert not any(
-        x == "" for x in lines
-    ), "Input file contains empty lines. Please fix them and try again."
+    assert not any(x == "" for x in lines), "Input file contains empty lines. Please fix them and try again."
     assert len(lines) > 0, "Input file is empty. Please provide some input."
     outputs = llm.translate_lines(args.langs, lines, batch_size=args.batch_size)
     assert len(outputs) == len(
@@ -180,9 +161,7 @@ def parse_args():
         default=sys.stdout,
         help="Output file",
     )
-    parser.add_argument(
-        "-pb", "--progress", action="store_true", help="Show progress bar"
-    )
+    parser.add_argument("-pb", "--progress", action="store_true", help="Show progress bar")
     parser.add_argument(
         "-pt",
         "--prompt",
