@@ -22,3 +22,4 @@ downloads/
 eggs/
 .eggs/
 .pytest_cache
+*.bak
