@@ -1,4 +1,8 @@
 workdir
+tmp/
+*.bak
+.vscode/
+
 .history
 # azure
 .amltconfig
