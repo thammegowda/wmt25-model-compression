@@ -14,6 +14,8 @@ from pathlib import Path
 
 from modelzip.config import DEF_BATCH_SIZE, DEF_LANG_PAIRS, TASK_CONF, WORK_DIR
 
+DEF_SHOW_PROGRESS = True
+
 
 def get_score(src_file: Path, out_file: Path, ref_file: Path, metric: str):
     if metric == "chrf":
@@ -34,12 +36,19 @@ def get_run_cmd(model_dir: Path) -> str:
     return run_cmd
 
 
+def line_count(file: Path) -> int:
+    """Returns the number of lines in a file."""
+    with open(file, "r", encoding="utf-8") as f:
+        return sum(1 for _ in f)
+
+
 def evaluate(
     tests_dir: Path,
     model_dir: Path,
     langs=DEF_LANG_PAIRS,
     metrics=TASK_CONF["metrics"],
     batch_size: int = DEF_BATCH_SIZE,
+    show_progress: bool = DEF_SHOW_PROGRESS,
 ):
 
     run_cmd = get_run_cmd(model_dir)
@@ -54,7 +63,14 @@ def evaluate(
             if not out.exists() or out.stat().st_size == 0:
                 tmp_file = out.with_suffix(out.suffix + ".tmp")
                 tmp_file.unlink(missing_ok=True)
-                run_cmd_full = f"{run_cmd} {pair} {batch_size} < {src_file} > {tmp_file}"
+
+                n_lines = line_count(src_file)
+                pbar_cmd = ""
+                if show_progress:
+                    pbar_cmd = (
+                        f" | tqdm --total {n_lines} --desc {model_dir.name}-{src_file.name} --unit line --dynamic-ncols"
+                    )
+                run_cmd_full = f"{run_cmd} {pair} {batch_size} < {src_file} {pbar_cmd} > {tmp_file}"
                 LOG.info(f"Running command: {run_cmd_full}")
                 try:
                     sp.check_call(run_cmd_full, shell=True)
@@ -76,41 +92,31 @@ def evaluate(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Evaluate models on WMT25",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        description="Evaluate models on WMT25", formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument("-w", "--work", type=Path, default=WORK_DIR)
-    parser.add_argument(
-        "-l",
-        "--langs",
-        nargs="+",
-        help="Lang pairs to evaluate",
-        default=DEF_LANG_PAIRS,
-    )
+    parser.add_argument("-l", "--langs", nargs="+", help="Lang pairs to evaluate", default=DEF_LANG_PAIRS)
     parser.add_argument("-b", "--batch", dest="batch_size", type=int, default=DEF_BATCH_SIZE)
     parser.add_argument(
-        "-m",
-        "--model",
-        type=Path,
-        required=True,
-        help="Path to model directory. Must have a run.py or run.sh script",
+        "-m", "--model", type=Path, required=True, help="Path to model directory. Must have a run.py or run.sh script"
     )
     parser.add_argument(
-        "-M",
-        "--metrics",
-        nargs="+",
-        default=TASK_CONF["metrics"],
-        help="Metrics to use for evaluation",
+        "-M", "--metrics", nargs="+", default=TASK_CONF["metrics"], help="Metrics to use for evaluation"
+    )
+    
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        "--pbar", dest="show_progress", action="store_true", default=DEF_SHOW_PROGRESS,
+        help="Enable progress bar during evaluation"
+    )
+    group.add_argument(
+        "--no-pbar", dest="show_progress", action="store_false",
+        help="Disable progress bar during evaluation"
     )
     args = parser.parse_args()
     tests_dir = args.work / "tests"
-    evaluate(
-        tests_dir,
-        args.model,
-        langs=args.langs,
-        batch_size=args.batch_size,
-        metrics=args.metrics,
-    )
+    evaluate(tests_dir, args.model, langs=args.langs, batch_size=args.batch_size,
+             metrics=args.metrics, show_progress=args.show_progress)
 
 
 if __name__ == "__main__":
