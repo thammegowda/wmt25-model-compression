@@ -14,6 +14,12 @@ set -euo pipefail  # Exit on error, undefined variable, or failed command in a p
 # Set the timeout duration in seconds
 TIMEOUT_DURATION=900  # 15 minutes
 
+
+# wget https://data.statmt.org/wmt25/general-mt/wmt25.jsonl
+# cat wmt25.jsonl | jq -c  'select(.src_lang == "cs" and .tgt_lang == "de_DE")' > wmt25.cs-de.jsonl
+# cat wmt25.cs-de.jsonl | jq  .src_text  | sed 's/\\n/ /g' | jq -r . > wmt25.cs-de.txt
+
+
 # Iterate through each run.sh script in the /model/*/ directory
 for run_script in /model/*/run.sh; do
     # Get the submission ID from the directory name
@@ -29,10 +35,12 @@ for run_script in /model/*/run.sh; do
     du -sh . # Show the size of the submission directory
 
     # Prepare the input sentences
-    input_sentences="Sentence1\nSentence2 Word2 word3\nSentence3"
+    #input_sentences="Sentence1\nSentence2 Word2 word3\nSentence3"
+    input_sentences="Věta1\nVěta2 slovo2 slovo3\nVěta3"
     # Run the script with a timeout
     start_time=$(date +%s)
-    output=$(echo -e "$input_sentences" | timeout $TIMEOUT_DURATION bash "$run_script" eng-deu 1) || {
+    langs="ces-deu"
+    output=$(echo -e "$input_sentences" | timeout $TIMEOUT_DURATION bash "$run_script" $langs 1) || {
         echo "ERROR: Command failed for submission ID: $submission_id"
         continue
     }
@@ -40,7 +48,7 @@ for run_script in /model/*/run.sh; do
     elapsed_time=$((end_time - start_time))
     echo "Command executed in $elapsed_time seconds for submission ID: $submission_id"
     echo "Output from run.sh for submission ID $submission_id:"
-    echo "$output"
+    echo -e "=====\n$output\n======"
     # Check if the output is empty
     if [[ -z "$output" ]]; then
         echo "ERROR: Output is empty for submission ID: $submission_id"

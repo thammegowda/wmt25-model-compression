@@ -28,15 +28,14 @@ storage:
       is_output: True
 
 jobs:
-    - name: job
+    - name: debug
       sku: 80G1
-      #identity: managed
-      #process_count_per_node: 1
       submit_args: &sargs
         env:
           AMLT_DOCKERFILE_TEMPLATE: none
       command:
-        - sleep 3d
+        - sleep 5d
+
     - name: sanity
       sku: 80G1
       submit_args: *sargs
