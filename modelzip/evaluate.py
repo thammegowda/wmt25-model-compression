@@ -85,9 +85,13 @@ def evaluate(
             for m in metrics:
                 score_file = out.with_suffix(out.suffix + f".{m}.score")
                 if not score_file.exists() or score_file.stat().st_size == 0:
-                    score = get_score(src_file, out, ref, m)
-                    score_file.write_text(score)
-                    LOG.info(f"{score_file.name} : {score}")
+                    try:
+                        score = get_score(src_file, out, ref, m)
+                        score_file.write_text(score)
+                        LOG.info(f"{score_file.name} : {score}")
+                    except sp.CalledProcessError as e:
+                        LOG.error(f"Error scoring {out} with {m}: {e}")
+                        continue
                 else:
                     LOG.info(f"Skipping existing score file {score_file}")
             if backup_dir:
