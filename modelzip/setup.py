@@ -13,7 +13,6 @@ For the unconstrained task, participants may tweak this to download their own mo
 
 import argparse
 import logging as LOG
-import subprocess as sp
 from pathlib import Path
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -37,6 +36,7 @@ def setup_eval(work_dir: Path, langs=None):
         for test_name, get_fn in TASK_CONF["langs"][lang_pair].items():
             src_file = lang_dir / f"{test_name}.{src}-{tgt}.{src}"
             ref_file = lang_dir / f"{test_name}.{src}-{tgt}.{tgt}"
+            meta_file = lang_dir / f"{test_name}.{src}-{tgt}.meta"
             if (
                 src_file.exists()
                 and ref_file.exists()
@@ -49,17 +49,29 @@ def setup_eval(work_dir: Path, langs=None):
             lines = get_fn()
             assert isinstance(lines, list), f"Expected list of lines, got {type(lines)}"
             assert len(lines) > 0, f"No lines returned for {test_name} in {lang_pair}"
-            if isinstance(lines[0], list):
-                srcs = [x[0] for x in lines]
-                refs = [x[1] for x in lines]
-                src_file.write_text("\n".join(srcs))
-                ref_file.write_text("\n".join(refs))
-                LOG.info(f"Created test files {src_file}, {ref_file}")
-            else:
-                assert isinstance(lines[0], str), f"Expected string, got {type(lines[0])}"
+            if isinstance(lines[0], str):
                 src_file.write_text("\n".join(lines))
                 LOG.info(f"Created test files {src_file}; NOTE: refs are missing")
-
+            elif isinstance(lines[0], (list, tuple)):
+                n_fields = len(lines[0])
+                srcs = [x[0] for x in lines]
+                src_file.write_text("\n".join(srcs))
+                LOG.info(f"Created source file {src_file}")
+                if n_fields > 1:
+                    refs = [x[1] for x in lines]
+                    # tgt can be None
+                    if all(ref is None for ref in refs): # all tgt segs are None
+                        LOG.info("Refs are missing")
+                    else: # no tgt seg is None
+                        assert all(ref is not None for ref in refs), "Some references are None"
+                        ref_file.write_text("\n".join(refs))
+                        LOG.info(f"Created ref_file {ref_file}")
+                if n_fields > 2:  # src, tgt, meta
+                    meta = [x[2] for x in lines]
+                    meta_file.write_text("\n".join(meta))
+                    LOG.info(f"Created meta file {meta_file}")
+            else:
+                LOG.info(f"Unexpected line format {type(lines[0])} for {test_name} in {lang_pair}. str, List[str], or tuple[str] expected")
 
 
 def setup_model(work_dir: Path, cache_dir: Path, model_ids=TASK_CONF["models"]):

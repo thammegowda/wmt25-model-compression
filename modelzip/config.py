@@ -24,14 +24,14 @@ TASK_CONF = {
         "jpn-zho": {
             "wmt24": CmdGetter("sacrebleu -t wmt24 -l ja-zh --echo src ref:refA"),
             "wmt25": Wmt25Data("ja-zh_CN"),
-            },
+        },
         "eng-ara": {
             "wmt24pp": CmdGetter("mtdata echo Google-wmt24pp-1-eng-ara_SA | sed 's/\\r//g'"),
             "wmt25": Wmt25Data("en-ar_EG"),
-            },
+        },
     },
     "models": ["CohereLabs/aya-expanse-8b"],
-    "metrics": ["chrf", "wmt22-comet-da"], # "wmt22-cometkiwi-da" is a gated model
+    "metrics": ["chrf", "wmt22-comet-da"],  # "wmt22-cometkiwi-da" is a gated model
 }
 
 # Default language pairs
