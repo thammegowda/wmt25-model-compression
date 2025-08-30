@@ -97,7 +97,7 @@ def evaluate(
                         "run_num": run_num,
                         "model_name": model_name,
                         "batch_size": batch_size,
-                        "out_file": out,
+                        "out_file": str(out),
                         "amulet_job": os.getenv("AMLT_JOB_NAME", "N/A"),
                         "command": run_cmd_full,
                         "exit_code": proc.returncode,

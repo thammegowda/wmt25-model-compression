@@ -16,12 +16,11 @@ environment:
 
     setup:
       - echo "==== MY SETUP BEGIN ===="
-      - pip install -e . --no-deps && pip install sacrebleu mtdata[hf] pymarian
-      - mkdir -p ~/.cache && ln -sf /mnt/tg/data/cache/marian ~/.cache/marian
+      - bash evals/node-setup.sh
+      ######
       - export PATH=$$PATH:~/.local/bin
-      - python -m modelzip.setup -t eval
-      ################
       - git config --global credential.helper store
+      ################
       - echo "==== MY SETUP END ===="
 code:
     local_dir: $CONFIG_DIR/..
@@ -47,5 +46,12 @@ jobs:
       submit_args: *sargs
       command:
         - bash evals/sanitycheck.sh
+
+    - name: evaluate
+      sku: 80G1
+      submit_args: *sargs
+      command:
+        - bash evals/evaluate.sh
+
 
 

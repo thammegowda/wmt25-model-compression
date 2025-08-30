@@ -17,6 +17,10 @@ done
 
 for s in mcptqsr tcd-kreasof-slim mcsr-v2 vicomtech; do
     #export SUB_ID=$s
-    $EXEC "SUB_ID=$s amlt run amlt/a100.yml :sanity=$s-sanity04"
+    #$EXEC "SUB_ID=$s amlt run amlt/a100.yml :sanity=$s-sanity04"
+    # debug
+    #$EXEC "SUB_ID=$s amlt run -y amlt/a100.yml :debug=debug03-$s"
+    # evaluate
+    $EXEC "SUB_ID=$s amlt run -y amlt/a100.yml :evaluate=$s"
 done
 
