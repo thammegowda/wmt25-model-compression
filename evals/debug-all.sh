@@ -15,8 +15,8 @@ while [[ "$1" != "" ]]; do
     shift
 done
 
-for s in mcptqsr tcd-kreasof-slim mcsr-wmt25 vicomtech; do
+for s in mcptqsr tcd-kreasof-slim mcsr-v2 vicomtech; do
     #export SUB_ID=$s
-    $EXEC "SUB_ID=$s amlt run amlt/a100.yml :debug=debug01-$s"
+    $EXEC "SUB_ID=$s amlt run -y amlt/a100.yml :debug=debug03-$s"
 done
 

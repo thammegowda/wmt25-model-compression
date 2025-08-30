@@ -18,6 +18,7 @@ Wmt25Data.CACHE_DIR = HF_CACHE / "wmt25-modelzip"
 TASK_CONF = {
     "langs": {
         "ces-deu": {
+            "warmup": CmdGetter("echo 'ahoj světe\tHallo Welt'"),  # a single sentence dataset
             "wmt19": CmdGetter("sacrebleu -t wmt19 -l cs-de --echo src ref"),
             "wmt25": Wmt25Data("cs-de_DE"),
         },
@@ -37,7 +38,7 @@ TASK_CONF = {
 # Default language pairs
 DEF_LANG_PAIRS = list(TASK_CONF["langs"].keys())
 # Default batch size for translation
-DEF_BATCH_SIZE = 16
+DEF_BATCH_SIZE = 1
 
 # Mapping of language codes to full names
 LANGS_MAP = dict(
