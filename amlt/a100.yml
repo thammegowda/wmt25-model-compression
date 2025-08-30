@@ -51,7 +51,7 @@ jobs:
       sku: 80G1
       submit_args: *sargs
       command:
-        - bash evals/evaluate.sh
+        - bash evals/evaluate.sh $EXTRA_ARGS
 
 
 

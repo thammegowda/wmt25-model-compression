@@ -8,7 +8,6 @@ EXEC=echo
 while [[ "$1" != "" ]]; do
     case $1 in
         -y|--yes)
-            #EXEC="exec"
             EXEC="bash -c"
             ;;
     esac
@@ -21,6 +20,9 @@ for s in mcptqsr tcd-kreasof-slim mcsr-v2 vicomtech; do
     # debug
     #$EXEC "SUB_ID=$s amlt run -y amlt/a100.yml :debug=debug03-$s"
     # evaluate
-    $EXEC "SUB_ID=$s amlt run -y amlt/a100.yml :evaluate=$s"
+    $EXEC "SUB_ID=$s amlt run -y amlt/a100.yml :evaluate=eval01-$s"
 done
+
+# run baseline
+$EXEC "SUB_ID=baseline amlt run -y amlt/a100.yml :evaluate=eval01-baseline -x --baseline"
 
