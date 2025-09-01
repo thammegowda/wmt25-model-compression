@@ -18,6 +18,7 @@ from modelzip.config import LOG
 
 
 def compress_model(model_dir: Path, output_dir: Path, quant_config):
+def compress_model(model_dir: Path, output_dir: Path, quant_config):
 
     flag_file = output_dir / "._OK"
     if flag_file.exists():
@@ -27,6 +28,8 @@ def compress_model(model_dir: Path, output_dir: Path, quant_config):
     tokenizer = AutoTokenizer.from_pretrained(model_dir, **loader_args)
     loader_args["device_map"] = "auto"
     # Set the quantization config
+    loader_args["quantization_config"] = quant_config
+    LOG.info(f"Loading model {model_dir}; quantization config: {quant_config}")
     loader_args["quantization_config"] = quant_config
     LOG.info(f"Loading model {model_dir}; quantization config: {quant_config}")
     model = AutoModelForCausalLM.from_pretrained(model_dir, **loader_args)
@@ -76,18 +79,18 @@ def explore_bnb_variants(model_dir: Path):
     quant_config = BitsAndBytesConfig(
         load_in_4bit=True,
         bnb_4bit_quant_type="nf4",
-     )
+    )
     compress_model(model_dir=model_dir, output_dir=output_dir, quant_config=quant_config)
-    
+
     # 4bit fp4
     output_dir = model_dir.with_name(model_name + "-bnb-4bit-fp4")
     quant_config = BitsAndBytesConfig(
         load_in_4bit=True,
         bnb_4bit_quant_type="fp4",
-        )
+    )
     compress_model(model_dir=model_dir, output_dir=output_dir, quant_config=quant_config)
-   
-   # double quantization
+
+    # double quantization
     output_dir = model_dir.with_name(model_name + "-bnb-4bit-nf4-2q")
     quant_config = BitsAndBytesConfig(
         load_in_4bit=True,
@@ -95,14 +98,14 @@ def explore_bnb_variants(model_dir: Path):
         bnb_4bit_use_double_quant=True,
     )
     compress_model(model_dir=model_dir, output_dir=output_dir, quant_config=quant_config)
-    
+
     # quantize lm_head too
     output_dir = model_dir.with_name(model_name + "-bnb-8bit-qlmhead")
     quant_config = BitsAndBytesConfig(
         load_in_8bit=True,
-        llm_int8_skip_modules=[],  # 
+        llm_int8_skip_modules=[],  #
     )
-    
+
 
 def my_exploration_methods(model_dir: Path):
     """
@@ -111,15 +114,14 @@ def my_exploration_methods(model_dir: Path):
     """
     LOG.info("Exploring bitsandbytes variants")
     explore_bnb_variants(model_dir)
-    
+
     # Add more methods as needed
     # e.g., explore other quantization methods, pruning, etc.
     # compress_model(model_dir, output_dir, quant_config)
-    
+
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Download and compress models for WMT25 Model Compression Task")
+    parser = argparse.ArgumentParser(description="Download and compress models for WMT25 Model Compression Task")
     parser.add_argument(
         "-m",
         "--model",
@@ -127,17 +129,16 @@ def main():
         help="Path to base model directory",
         default="./workdir/models/aya-expanse-8b-base",
     )
-    
+
     args = parser.parse_args()
     model_dir = args.model
-    
-    # demo methods included in organizers' code
-    run_demos = False
-    if run_demos:
-        demo_methods(model_dir)
-    else:
-        my_exploration_methods(model_dir)
-    
+
+    # demo methods included in organizers' code (TG's initial attempt)
+    demo_methods(model_dir)
+
+    # TG's variants
+    my_exploration_methods(model_dir)
+
 
 if __name__ == "__main__":
     main()

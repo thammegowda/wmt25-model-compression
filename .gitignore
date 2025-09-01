@@ -1,4 +1,8 @@
 workdir
+tmp/
+*.bak
+.vscode/
+
 .history
 # azure
 .amltconfig
@@ -22,3 +26,4 @@ downloads/
 eggs/
 .eggs/
 .pytest_cache
+*.bak

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 #
 # 2025-05-09: Initial version by TG Gowda
+# 2025-08-17:  add support for source only wmt25 testsets
 #
 """
 Setup script for WMT25 models
@@ -12,7 +13,6 @@ For the unconstrained task, participants may tweak this to download their own mo
 
 import argparse
 import logging as LOG
-import subprocess as sp
 from pathlib import Path
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -33,9 +33,10 @@ def setup_eval(work_dir: Path, langs=None):
         src, tgt = lang_pair.split("-")
         lang_dir = tests_dir / lang_pair
         lang_dir.mkdir(parents=True, exist_ok=True)
-        for test_name, get_cmd in TASK_CONF["langs"][lang_pair].items():
+        for test_name, get_fn in TASK_CONF["langs"][lang_pair].items():
             src_file = lang_dir / f"{test_name}.{src}-{tgt}.{src}"
             ref_file = lang_dir / f"{test_name}.{src}-{tgt}.{tgt}"
+            meta_file = lang_dir / f"{test_name}.{src}-{tgt}.meta"
             if (
                 src_file.exists()
                 and ref_file.exists()
@@ -44,19 +45,33 @@ def setup_eval(work_dir: Path, langs=None):
             ):
                 LOG.info(f"Test files exist for {lang_pair}:{test_name}")
                 continue
-            LOG.info(f"Fetching {test_name} via: {get_cmd}")
-            lines = sp.check_output(get_cmd, shell=True, text=True).strip().replace("\r", "").split("\n")
-            lines = [x.strip().split("\t") for x in lines]
-            if "mtdata" in get_cmd:
-                lines = [x[:2] for x in lines]
-            n_errs = sum(1 for i, x in enumerate(lines, 1) if len(x) != 2)
-            if n_errs:
-                raise ValueError(f"Invalid output from {get_cmd}: {n_errs} errors")
-            srcs = [x[0] for x in lines]
-            refs = [x[1] for x in lines]
-            src_file.write_text("\n".join(srcs))
-            ref_file.write_text("\n".join(refs))
-            LOG.info(f"Created test files {src_file}, {ref_file}")
+            LOG.info(f"Fetching {test_name} via: {get_fn}")
+            lines = get_fn()
+            assert isinstance(lines, list), f"Expected list of lines, got {type(lines)}"
+            assert len(lines) > 0, f"No lines returned for {test_name} in {lang_pair}"
+            if isinstance(lines[0], str):
+                src_file.write_text("\n".join(lines))
+                LOG.info(f"Created test files {src_file}; NOTE: refs are missing")
+            elif isinstance(lines[0], (list, tuple)):
+                n_fields = len(lines[0])
+                srcs = [x[0] for x in lines]
+                src_file.write_text("\n".join(srcs))
+                LOG.info(f"Created source file {src_file}")
+                if n_fields > 1:
+                    refs = [x[1] for x in lines]
+                    # tgt can be None
+                    if all(ref is None for ref in refs): # all tgt segs are None
+                        LOG.info("Refs are missing")
+                    else: # no tgt seg is None
+                        assert all(ref is not None for ref in refs), "Some references are None"
+                        ref_file.write_text("\n".join(refs))
+                        LOG.info(f"Created ref_file {ref_file}")
+                if n_fields > 2:  # src, tgt, meta
+                    meta = [x[2] for x in lines]
+                    meta_file.write_text("\n".join(meta))
+                    LOG.info(f"Created meta file {meta_file}")
+            else:
+                LOG.info(f"Unexpected line format {type(lines[0])} for {test_name} in {lang_pair}. str, List[str], or tuple[str] expected")
 
 
 def setup_model(work_dir: Path, cache_dir: Path, model_ids=TASK_CONF["models"]):
@@ -95,7 +110,8 @@ def setup_model(work_dir: Path, cache_dir: Path, model_ids=TASK_CONF["models"]):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Setup WMT25 shared task")
+    parser = argparse.ArgumentParser(description="Setup WMT25 shared task",
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("-w", "--work", type=Path, default=WORK_DIR, help="Work directory")
     parser.add_argument("-l", "--langs", nargs="+", help="Language pairs to setup")
     parser.add_argument(
