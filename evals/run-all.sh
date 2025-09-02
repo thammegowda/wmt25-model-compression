@@ -14,15 +14,16 @@ while [[ "$1" != "" ]]; do
     shift
 done
 
+tag=eval02
 for s in mcptqsr tcd-kreasof-slim mcsr-v2 vicomtech; do
     #export SUB_ID=$s
     #$EXEC "SUB_ID=$s amlt run amlt/a100.yml :sanity=$s-sanity04"
     # debug
     #$EXEC "SUB_ID=$s amlt run -y amlt/a100.yml :debug=debug03-$s"
     # evaluate
-    $EXEC "SUB_ID=$s amlt run -y amlt/a100.yml :evaluate=eval01-$s"
+    $EXEC "SUB_ID=$s amlt run -y amlt/a100.yml :evaluate=$tag-$s"
 done
 
 # run baseline
-$EXEC "SUB_ID=baseline amlt run -y amlt/a100.yml :evaluate=eval01-baseline -x --baseline"
+$EXEC "SUB_ID=baseline amlt run -y amlt/a100.yml :evaluate=$tag-baseline -x --baseline"
 
