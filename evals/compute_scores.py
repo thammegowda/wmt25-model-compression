@@ -48,6 +48,12 @@ import tempfile
 from collections import OrderedDict
 from typing import Dict, List, Tuple, Any
 
+import torch
+import datasets
+import transformers
+from metricx24 import models
+
+
 EVAL_DIR_RE = re.compile(r"^eval(\d{2})-(.+)$")
 LANGPAIR_RE = re.compile(r"^([a-z]+)-([a-z]+)$")
 
@@ -200,32 +206,71 @@ class MetrixScore:
     def __init__(self, model_name: str = 'google/metricx-24-hybrid-xl-v2p6', batch_size: int = 8):
         self.model_name = model_name
         self.batch_size = batch_size
+        if torch.cuda.is_available():
+            self.device = torch.device("cuda")
+        else:
+            self.device = torch.device("cpu")
+
+        self.tokenizer = transformers.AutoTokenizer.from_pretrained("google/mt5-xl")
+
+        self.model = models.MT5ForRegression.from_pretrained(
+            model_name, torch_dtype="auto"
+        )
+
+        self.model.to(self.device)
+        self.model.eval()
+        self.max_input_length = 1536
 
     def score(self, sys_texts: List[str], ref_texts: List[str], src_texts: List[str]) -> float:
-        scores = []
-        with tempfile.NamedTemporaryFile("w") as tmp_in, tempfile.NamedTemporaryFile("r") as tmp_out:
-            for mt, ref, src in zip(sys_texts, ref_texts, src_texts):
-                json.dump({"source": src, "hypothesis": mt, "reference": ref}, tmp_in)
-                tmp_in.write("\n")
-            tmp_in.flush()
-            cmd = [
-                "python", "-m", "metricx24.predict",
-                "--tokenizer", "google/mt5-xl",
-                "--model_name_or_path", self.model_name,
-                "--max_input_length", "1536",
-                "--batch_size", str(self.batch_size),
-                "--input_file", tmp_in.name,
-                "--output_file", tmp_out.name,
-            ]
-            try:
-                subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            except subprocess.CalledProcessError as e:
-                print("Command failed with stderr: ", e.stderr)
-                print("Command failed with stdout: ", e.stdout)
-                raise e
-            for out_l in tmp_out.readlines():
-                scores.append(json.loads(out_l)["prediction"])
-        return statistics.mean(scores)
+        def _make_input(example):
+            example["input"] = (
+                    "source: "
+                    + example["source"]
+                    + " candidate: "
+                    + example["hypothesis"]
+                    + " reference: "
+                    + example["reference"]
+            )
+            return example
+
+        def _tokenize(example):
+            return self.tokenizer(
+                example["input"],
+                max_length=self.max_input_length,
+                truncation=True,
+                padding=False,
+            )
+
+        def _remove_eos(example):
+            example["input_ids"] = example["input_ids"][:-1]
+            example["attention_mask"] = example["attention_mask"][:-1]
+            return example
+
+        with tempfile.NamedTemporaryFile("w") as tmp:
+            training_args = transformers.TrainingArguments(
+                output_dir=os.path.dirname(tmp.name),
+                per_device_eval_batch_size=self.batch_size,
+                dataloader_pin_memory=False,
+            )
+            trainer = transformers.Trainer(
+                model=self.model,
+                args=training_args,
+            )
+
+            ds = datasets.Dataset.from_dict({
+                "source": src_texts, "reference": ref_texts, "hypothesis": sys_texts})
+            ds = ds.map(_make_input)
+            ds = ds.map(_tokenize)
+            ds = ds.map(_remove_eos)
+            ds.set_format(
+                type="torch",
+                columns=["input_ids", "attention_mask"],
+                device=self.device,
+                output_all_columns=True,
+            )
+            predictions, _, _ = trainer.predict(test_dataset=ds)
+
+        return statistics.mean(float(p) for p in predictions)
 
 
 def main():
