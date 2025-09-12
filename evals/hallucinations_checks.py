@@ -85,7 +85,7 @@ def parse_outfiles(langpair_path: str, source_lang: str, tgt_lang: str, model_na
 
 
 def read_lines(path: str) -> List[str]:
-    with open(path, 'r', encoding='utf-8') as fh:
+    with open(path, 'r', encoding='utf-8', errors='replace') as fh:
         return [ln.rstrip('\n') for ln in fh]
 
 
@@ -119,11 +119,7 @@ def main():
                 continue
 
             for outfile in outfiles:
-                try:
-                    out_lines = read_lines(outfile.path)
-                except UnicodeDecodeError:
-                    print(f"[WARN] {outfile.path} is not UTF-8 encoded. Skipping.")
-                    continue
+                out_lines = read_lines(outfile.path)
                 if len(out_lines) != len(input_lines):
                     print(
                         f"[WARN] Input and output lines are not matching "
