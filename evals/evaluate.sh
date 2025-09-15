@@ -41,7 +41,7 @@ metrics="chrf wmt22-comet-da wmt22-cometkiwi-da wmt23-cometkiwi-da-xl"
 # get outputs on all supported lang pairs for each model so we can do quality assessment
 for m in ${models[@]}; do
     echo "=====Full eval on $m with batch size $batch_size====="
-    python -m modelzip.evaluate -w $work -B $backup -r 1 -M $metrics -m $m -b 8 # -l all -t all
+    python -m modelzip.evaluate -w $work -B $backup -r 1 -M $metrics -m $m -b 8 -t wmt25  # -l all -t all
 done
 
 # this is for speed benchmark; try different batch sizes
