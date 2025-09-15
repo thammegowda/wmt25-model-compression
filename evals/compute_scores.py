@@ -45,7 +45,7 @@ import statistics
 import sys
 import tempfile
 from collections import OrderedDict
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Tuple, Any, Optional
 
 import torch
 import datasets
@@ -123,16 +123,29 @@ def find_langpair_dirs(eval_dir_path: str) -> List[str]:
     return sorted(out)
 
 
-def parse_outfiles(langpair_path: str, source_lang: str, tgt_lang: str, model_name: str) -> List[OutputFile]:
+def parse_outfiles(
+        langpair_path: str,
+        source_lang: str,
+        tgt_lang: str,
+        model_name: str,
+        run_id: Optional[int] = None) -> List[OutputFile]:
     files = []
+    if run_id is None:
+        run_regex = "run(\d+)"
+    else:
+        run_regex = f"run{run_id}"
     OUTFILE_RE = re.compile(
-        r"^wmt25\." + f"{source_lang}-{tgt_lang}\.{tgt_lang}" + "\.([A-Za-z0-9_\-\.]+)\.out\.batch(\d+)\.run(\d+)$"
+        r"^wmt25\." + f"{source_lang}-{tgt_lang}\.{tgt_lang}" + f"\.([A-Za-z0-9_\-\.]+)\.out\.batch(\d+)\.{run_regex}$"
     )
     for name in os.listdir(langpair_path):
         m = OUTFILE_RE.match(name)
         if not m:
             continue
-        model_type, batch_s, run_s = m.groups()
+        if run_id is None:
+            model_type, batch_s, run_s = m.groups()
+        else:
+            model_type, batch_s = m.groups()
+            run_s = run_id
         files.append(OutputFile(
             model_name=model_name,
             src=source_lang,
@@ -166,7 +179,7 @@ def load_meta(meta_path: str) -> Dict[str, List[int]]:
 
 
 def read_lines(path: str) -> List[str]:
-    with open(path, 'r', encoding='utf-8') as fh:
+    with open(path, 'r', encoding='utf-8', errors='replace') as fh:
         return [ln.rstrip('\n') for ln in fh]
 
 
@@ -280,7 +293,8 @@ def main():
                     help='Path or URL to wmt25-genmt.jsonl containing refs (and possibly srcs)')
     ap.add_argument('--comet-model', default='Unbabel/XCOMET-XL', help='COMET model name')
     ap.add_argument('--metricx-model', default='google/metricx-24-hybrid-xl-v2p6', help='MetricX model name')
-    ap.add_argument('--batch-size', type=int, default=1, help='COMET batch size')
+    ap.add_argument('--batch-size', type=int, default=1, help='COMET and MetricX batch size')
+    ap.add_argument('--run', type=int, default=None, help='Which run number to evaluate')
     ap.add_argument('--save-jsonl', default=None, help='Optional path to save detailed per-segment results in JSONL')
     ap.add_argument('--out', required=True, help='Output CSV path')
 
@@ -307,7 +321,7 @@ def main():
             if not os.path.exists(meta_path):
                 sys.exit(f"[ERROR] Missing meta for {eval_dirname}/{lp}: {meta_name}")
             seg2lines = load_meta(meta_path)
-            outfiles = parse_outfiles(langpair_path, src, tgt, model_name)
+            outfiles = parse_outfiles(langpair_path, src, tgt, model_name, args.run)
             if not outfiles:
                 print(f"[WARN] No output files in {eval_dirname}/{lp}")
                 continue
