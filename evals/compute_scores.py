@@ -42,7 +42,6 @@ import json
 import os
 import re
 import statistics
-import subprocess
 import sys
 import tempfile
 from collections import OrderedDict
@@ -178,8 +177,9 @@ def reconstruct_segments(seg2lines: Dict[str, List[int]], lines: List[str]) -> D
         segment_lines = lines[segment_lines_start_idx:segment_lines_start_idx + len(idxs)]
         buf: List[str] = []
         for i in range(max(idxs)):
-            if i in idxs:
-                buf.append(segment_lines[idxs.index(i)])
+            idx = i + 1
+            if idx in idxs:
+                buf.append(segment_lines[idxs.index(idx)])
             else:
                 buf.append('')  # missing line -> empty line
         seg2text[seg] = "\n".join(buf)
