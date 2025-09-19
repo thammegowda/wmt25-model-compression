@@ -335,9 +335,14 @@ def main():
                 hypo_texts = []
                 ref_texts = []
                 for k in seg2text.keys():
-                    hypo_texts.append(seg2text[k])
-                    ref_texts.append(refs_map[k][0])
-                    src_texts.append(srcs_map[k])
+                    splitted_hypo = seg2text[k].split("\n\n")
+                    splitted_ref = refs_map[k][0].split("\n\n")
+                    splitted_src = srcs_map[k].split("\n\n")
+                    assert len(splitted_hypo) == len(splitted_ref) == len(splitted_src)
+                    for h, r, s in zip(splitted_hypo, splitted_ref, splitted_src):
+                        hypo_texts.append(h)
+                        ref_texts.append(r)
+                        src_texts.append(s)
 
                 print(
                     f"Scoring {len(hypo_texts)} segments for {outfile} ...")
