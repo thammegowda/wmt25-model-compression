@@ -335,6 +335,8 @@ def main():
                 hypo_texts = []
                 ref_texts = []
                 for k in seg2text.keys():
+                    if k.split("#")[1] == "_testsuite_":
+                        continue
                     splitted_hypo = seg2text[k].split("\n\n")
                     splitted_ref = refs_map[k][0].split("\n\n")
                     splitted_src = srcs_map[k].split("\n\n")
