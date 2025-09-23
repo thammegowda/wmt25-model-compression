@@ -20,6 +20,7 @@ Usage:
     --out /path/to/output.txt
 """
 import argparse
+import csv
 import dataclasses
 import os
 import re
@@ -30,7 +31,7 @@ from typing import List, Tuple
 EVAL_DIR_RE = re.compile(r"^eval(\d{2})-(.+)$")
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class OutputFile:
     model_name: str
     src: str
@@ -102,6 +103,7 @@ def main():
     all_ratios = []
     hallucinated_segments = set()
     num_processed_outputs = 0
+    model_stats = {}
 
     for eval_dirname, model_name in find_eval_dirs(args.root):
         eval_dir_path = os.path.join(args.root, eval_dirname)
@@ -125,11 +127,13 @@ def main():
                         f"[WARN] Input and output lines are not matching "
                         f"({len(out_lines)}-{len(input_lines)}). Skipping {outfile.path}")
                     continue
+                model_stats[outfile] = 0
                 for line_id, (in_line, out_line) in enumerate(zip(input_lines, out_lines)):
                     ratio = len(out_line) / len(in_line)
                     all_ratios.append(ratio)
                     if ratio > args.threshold:
                         hallucinated_segments.add(line_id)
+                        model_stats[outfile] += 1
                 num_processed_outputs += 1
 
     if args.plot:
@@ -154,6 +158,20 @@ def main():
         for i, line in enumerate(input_lines):
             if i not in hallucinated_segments:
                 f.write(line + "\n")
+
+    with open(args.out + '.stats', 'w', encoding='utf-8') as f:
+        writer = csv.DictWriter(
+            f, fieldnames=["model_name", "model_type", "lang_pair", "batch", "run", "n_hall"])
+        writer.writeheader()
+        for outfile in model_stats.keys():
+            writer.writerow({
+                "model_name": outfile.model_name,
+                "model_type": outfile.model_type,
+                "lang_pair": outfile.lang_pair,
+                "batch": outfile.batch,
+                "run": outfile.run,
+                "n_hall": model_stats[outfile]
+            })
 
 
 if __name__ == '__main__':
