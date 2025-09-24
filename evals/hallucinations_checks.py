@@ -115,6 +115,13 @@ def main():
             if not os.path.exists(input_path):
                 sys.exit(f"[ERROR] Missing input for {eval_dirname}/{lp}: {input_path}")
             input_lines = read_lines(input_path)
+
+            meta_name = f"wmt25.{src}-{tgt}.meta"
+            meta_path = os.path.join(langpair_path, meta_name)
+            meta_lines = read_lines(meta_path)
+            if len(input_lines) != len(meta_lines):
+                sys.exit(f"[ERROR] Mismatching lines for {input_path} and {meta_path}")
+
             outfiles = parse_outfiles(langpair_path, src, tgt, model_name)
             if not outfiles:
                 print(f"[WARN] No output files in {eval_dirname}/{lp}")
@@ -156,6 +163,10 @@ def main():
 
     with open(args.out, 'w', encoding='utf-8') as f:
         for i, line in enumerate(input_lines):
+            if i not in hallucinated_segments:
+                f.write(line + "\n")
+    with open(args.out + '.meta', 'w', encoding='utf-8') as f:
+        for i, line in enumerate(meta_lines):
             if i not in hallucinated_segments:
                 f.write(line + "\n")
 
